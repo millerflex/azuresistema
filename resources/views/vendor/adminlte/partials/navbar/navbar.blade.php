@@ -22,6 +22,17 @@
         {{-- Configured right links --}}
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
+
+          {{-- Botón Chatbot --}}
+        <li class="nav-item d-flex align-items-center">
+    <button id="btnChatbot" type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#chatbotModal">
+      <i class="fas fa-robot"></i> Chatbot
+    </button>
+  </li>
+
+        
+
+
         {{-- User menu link --}}
         @if(Auth::user())
             @if(config('adminlte.usermenu_enabled'))
