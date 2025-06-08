@@ -2,9 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 
+
+
+
+use App\Http\Controllers\ChatController;
+
+Route::get('/chatbot', [ChatController::class, 'form']);
+Route::post('/chatbot', [ChatController::class, 'handle']);
+
 Route::get('/', function () {
     return redirect('admin');
 });
+
+
+Route::post('/chat', [ChatController::class, 'chat']);
 
 Auth::routes();
 

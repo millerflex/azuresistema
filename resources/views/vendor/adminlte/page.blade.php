@@ -101,50 +101,69 @@
         });
             </script>
     @endif
-
-<!-- AWS SDK -->
-<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1482.0.min.js"></script>
-
 <script>
 
 
-function appendMessage(sender, text) {
-  const content = document.getElementById('chatbotContent');
-  const div = document.createElement('div');
-  div.className = sender === 'Bot' 
-    ? 'bg-cyan-100 text-cyan-800 p-3 rounded-lg shadow-sm w-fit max-w-[85%]' 
-    : 'bg-cyan-600 text-white p-3 rounded-lg shadow-sm self-end w-fit max-w-[85%] ml-auto';
-  div.textContent = `${sender}: ${text}`;
-  content.appendChild(div);
-  content.scrollTop = content.scrollHeight;
-}
+const respuestasLocales = {
+    "hola": "¡Hola! ¿En qué puedo ayudarte?",
+    "ayuda": "Puedo ayudarte con usuarios, productos, roles y permisos. Intenta preguntar sobre eso."
+  };
 
-  // 🧭 Configuración AWS
-  AWS.config.region = 'us-east-1';
-  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'us-east-1:9ff5f177-5a16-4b02-9deb-45d69c807ddc'
-  });
+ 
+  const contextoBase = [
+    { role: "system", content: "Eres un asistente útil para un sistema de ventas." },
+    { role: "system", content: "Si alguien pregunta 'crear usuario', responde: Para crear un usuario, ve al menú 'Usuarios' y haz clic en 'Crear Usuario'." },
+    { role: "system", content: "Si alguien pregunta 'ver productos', responde: Puedes ver los productos registrados en el menú 'Productos'." },
+    { role: "system", content: "Si alguien pregunta 'crear producto', responde: Haz clic en 'Productos' y luego en 'Crear Producto'." },
+    { role: "system", content: "Puedes ayudar con usuarios, productos, roles y permisos." }
+  ];
 
-  const lexRuntime = new AWS.LexRuntimeV2();
-  const translate = new AWS.Translate();
-
-  const botId = 'XHS8TMSJZL';
-  const botAliasId = 'TSTALIASID';
-  const localeId = 'en_US';
-  const sessionId = 'user-' + Date.now();
-
-  // 🧠 Enviar mensaje al presionar ENTER
-  document.getElementById('chatInput').addEventListener('keypress', async function (e) {
+  const AZURE_OPENAI_ENDPOINT = 'https://danie-mbo0n7z7-eastus2.cognitiveservices.azure.com/';
+  const DEPLOYMENT_ID = 'gpt-4';
+  const API_VERSION = '2024-12-01-preview';
+  const API_KEY = '7uWuOtqL9Sj2uDVC7TY2E6ZpGm2nPQ0ToB0z4gFUDIpzqd1KGaBRJQQJ99BFACHYHv6XJ3w3AAAAACOGZRrI';
+ document.getElementById('chatInput').addEventListener('keypress', async function (e) {
     if (e.key === 'Enter') {
-      const inputText = e.target.value.trim();
+      const inputText = e.target.value.trim().toLowerCase();
       if (!inputText) return;
+
       appendMessage('Tú', inputText);
       e.target.value = '';
-      await enviarMensajeTraducido(inputText);
+
+      if (respuestasLocales[inputText]) {
+        appendMessage('Bot', respuestasLocales[inputText]);
+        return;
+      }
+
+      const messages = [
+        ...contextoBase,
+        { role: "user", content: inputText }
+      ];
+
+      try {
+        const response = await fetch(`${AZURE_OPENAI_ENDPOINT}openai/deployments/${DEPLOYMENT_ID}/chat/completions?api-version=${API_VERSION}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": API_KEY
+          },
+          body: JSON.stringify({
+            messages: messages,
+            max_tokens: 100
+          })
+        });
+
+        const data = await response.json();
+        const respuestaIA = data?.choices?.[0]?.message?.content?.trim();
+        appendMessage('Bot', respuestaIA || '⚠️ Sin respuesta válida.');
+
+      } catch (error) {
+        console.error("Error:", error);
+        appendMessage('Bot', '⚠️ Error al conectarse con Azure.');
+      }
     }
   });
 
-  // 🖋️ Mostrar mensaje
   function appendMessage(sender, text) {
     const content = document.getElementById('chatbotContent');
     const p = document.createElement('p');
@@ -152,54 +171,8 @@ function appendMessage(sender, text) {
     content.appendChild(p);
     content.scrollTop = content.scrollHeight;
   }
-
-  // 🔁 Traducir usando Amazon Translate
-  async function traducirAWS(texto, sourceLang, targetLang) {
-    return new Promise((resolve, reject) => {
-      const params = {
-        SourceLanguageCode: sourceLang,
-        TargetLanguageCode: targetLang,
-        Text: texto
-      };
-      translate.translateText(params, function (err, data) {
-        if (err) {
-          console.error("Error con AWS Translate:", err);
-          reject(err);
-        } else {
-          resolve(data.TranslatedText);
-        }
-      });
-    });
-  }
-
-  // 🤖 Traducir y enviar mensaje a Lex
-  async function enviarMensajeTraducido(textoUsuario) {
-    try {
-      const textoIngles = await traducirAWS(textoUsuario, 'es', 'en');
-
-      const params = {
-        botId,
-        botAliasId,
-        localeId,
-        sessionId,
-        text: textoIngles
-      };
-
-      lexRuntime.recognizeText(params, async function (err, data) {
-        if (err) {
-          console.error(err);
-          appendMessage('Bot', '⚠️ Error al contactar con el asistente.');
-        } else {
-          const respuestaIngles = data.messages?.[0]?.content || '(Sin respuesta)';
-          const respuestaEsp = await traducirAWS(respuestaIngles, 'en', 'es');
-          appendMessage('Bot', respuestaEsp);
-        }
-      });
-    } catch (error) {
-      appendMessage('Bot', '⚠️ Error al traducir o procesar el mensaje.');
-    }
-  }
 </script>
+
 
 
 
