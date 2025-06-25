@@ -1,0 +1,21 @@
+name: Spring Boot CI
+
+on:
+  push:
+    branches: [ "main" ]  # Solo se activa si haces push a main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar código
+        uses: actions/checkout@v3
+
+      - name: Configurar Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+
+      - name: Compilar y ejecutar pruebas
+        run: mvn clean verify
