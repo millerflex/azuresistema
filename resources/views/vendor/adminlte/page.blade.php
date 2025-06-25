@@ -109,7 +109,6 @@ const respuestasLocales = {
     "ayuda": "Puedo ayudarte con usuarios, productos, roles y permisos. Intenta preguntar sobre eso."
   };
 
- 
   const contextoBase = [
     { role: "system", content: "Eres un asistente útil para un sistema de ventas." },
     { role: "system", content: "Si alguien pregunta 'crear usuario', responde: Para crear un usuario, ve al menú 'Usuarios' y haz clic en 'Crear Usuario'." },
@@ -117,6 +116,7 @@ const respuestasLocales = {
     { role: "system", content: "Si alguien pregunta 'crear producto', responde: Haz clic en 'Productos' y luego en 'Crear Producto'." },
     { role: "system", content: "Puedes ayudar con usuarios, productos, roles y permisos." }
   ];
+                                                                        
 
   const AZURE_OPENAI_ENDPOINT = 'https://danie-mbo0n7z7-eastus2.cognitiveservices.azure.com/';
   const DEPLOYMENT_ID = 'gpt-4';
