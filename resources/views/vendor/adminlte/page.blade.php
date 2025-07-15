@@ -103,74 +103,70 @@
     @endif
 <script>
 
+const AZURE_OPENAI_ENDPOINT ='https://mille-md44djyf-swedencentral.cognitiveservices.azure.com/';
+const DEPLOYMENT_ID = 'gpt-4'; // Asegúrate de que este Deployment ID sea el correcto
+const API_VERSION = '2024-12-01-preview';
+const API_KEY = 'EiXUa7B9ywiK9fIVwAazMT4UaernZIT3ibhIUbkTEeb06ffYUix0JQQJ99BGACfhMk5XJ3w3AAAAACOG7Vtz'; // Asegúrate de que esta sea la clave correcta
 
-const respuestasLocales = {
-    "hola": "¡Hola! ¿En qué puedo ayudarte?",
-    "ayuda": "Puedo ayudarte con usuarios, productos, roles y permisos. Intenta preguntar sobre eso."
-  };
+const contextoBase = [
+    { role: "system", content: "Eres un asistente útil para navegar por un sistema de ventas y gestión de inventarios." },
+    { role: "system", content: "Si alguien pregunta '¿Dónde está el Dashboard?', responde: 'Para acceder al Dashboard, ve a la sección 'Inicio' en el menú principal. El Dashboard muestra estadísticas clave sobre las ventas, usuarios activos y rendimiento general.'" },
+    { role: "system", content: "Si alguien pregunta '¿Cómo gestiono los usuarios?', responde: 'Para gestionar usuarios, ve al menú 'Usuarios' y haz clic en 'Gestionar Usuarios'. Desde ahí, puedes agregar, editar o eliminar usuarios, y asignarles roles.'" },
+    { role: "system", content: "Si alguien pregunta '¿Cómo veo los productos?', responde: 'Ve a 'Productos' y selecciona 'Listado de productos'. Ahí podrás ver todos los productos registrados.'"},
+    { role: "system", content: "Si alguien pregunta '¿Cómo gestiono los roles?', responde: 'Para gestionar roles y permisos, ve a 'Roles' en el menú. Ahí podrás asignar roles a los usuarios y configurar sus permisos según sus funciones.'" },
+    { role: "system", content: "Si alguien pregunta '¿Dónde veo las facturas?', responde: 'Para acceder a la facturación, dirígete a 'Facturación' en el menú. Aquí podrás ver las facturas generadas y realizar consultas sobre pagos.'" },
+    { role: "system", content: "Si alguien pregunta '¿Cómo generar un reporte?', responde: 'Para generar reportes, ve a la sección 'Reportes' en el menú. Puedes ver informes sobre ventas, productos más vendidos, y otros datos relevantes del sistema.'" },
+    { role: "system", content: "Si alguien pregunta '¿Cómo puedo obtener ayuda?', responde: 'Si necesitas soporte, puedes ir a la sección 'Ayuda' en el menú o escribir aquí lo que necesitas y estaré encantado de guiarte.'" },
+    { role: "system", content: "Puedes ayudar con tareas como la gestión de usuarios, productos, roles, facturación y reportes en el sistema." }
+];
 
-  const contextoBase = [
-    { role: "system", content: "Eres un asistente útil para un sistema de ventas." },
-    { role: "system", content: "Si alguien pregunta 'crear usuario', responde: Para crear un usuario, ve al menú 'Usuarios' y haz clic en 'Crear Usuario'." },
-    { role: "system", content: "Si alguien pregunta 'ver productos', responde: Puedes ver los productos registrados en el menú 'Productos'." },
-    { role: "system", content: "Si alguien pregunta 'crear producto', responde: Haz clic en 'Productos' y luego en 'Crear Producto'." },
-    { role: "system", content: "Puedes ayudar con usuarios, productos, roles y permisos." }
-  ];
-                                                                        
-
-  const AZURE_OPENAI_ENDPOINT = 'https://danie-mbo0n7z7-eastus2.cognitiveservices.azure.com/';
-  const DEPLOYMENT_ID = 'gpt-4';
-  const API_VERSION = '2024-12-01-preview';
-  const API_KEY = '7uWuOtqL9Sj2uDVC7TY2E6ZpGm2nPQ0ToB0z4gFUDIpzqd1KGaBRJQQJ99BFACHYHv6XJ3w3AAAAACOGZRrI';
- document.getElementById('chatInput').addEventListener('keypress', async function (e) {
+document.getElementById('chatInput').addEventListener('keypress', async function (e) {
     if (e.key === 'Enter') {
-      const inputText = e.target.value.trim().toLowerCase();
-      if (!inputText) return;
+        const inputText = e.target.value.trim().toLowerCase();
+        if (!inputText) return;
 
-      appendMessage('Tú', inputText);
-      e.target.value = '';
+        appendMessage('Tú', inputText);
+        e.target.value = '';
 
-      if (respuestasLocales[inputText]) {
-        appendMessage('Bot', respuestasLocales[inputText]);
-        return;
-      }
+        // Crear los mensajes que se enviarán a la IA (incluyendo el contexto)
+        const messages = [
+            ...contextoBase,
+            { role: "user", content: inputText }
+        ];
 
-      const messages = [
-        ...contextoBase,
-        { role: "user", content: inputText }
-      ];
+        try {
+            // Enviar la solicitud a Azure OpenAI con el contexto completo
+            const response = await fetch(`${AZURE_OPENAI_ENDPOINT}openai/deployments/${DEPLOYMENT_ID}/chat/completions?api-version=${API_VERSION}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-key": API_KEY
+                },
+                body: JSON.stringify({
+                    messages: messages,
+                    max_tokens: 150
+                })
+            });
 
-      try {
-        const response = await fetch(`${AZURE_OPENAI_ENDPOINT}openai/deployments/${DEPLOYMENT_ID}/chat/completions?api-version=${API_VERSION}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "api-key": API_KEY
-          },
-          body: JSON.stringify({
-            messages: messages,
-            max_tokens: 100
-          })
-        });
+            const data = await response.json();
+            const respuestaIA = data?.choices?.[0]?.message?.content?.trim();
+            appendMessage('Bot', respuestaIA || '⚠️ Sin respuesta válida.');
 
-        const data = await response.json();
-        const respuestaIA = data?.choices?.[0]?.message?.content?.trim();
-        appendMessage('Bot', respuestaIA || '⚠️ Sin respuesta válida.');
-
-      } catch (error) {
-        console.error("Error:", error);
-        appendMessage('Bot', '⚠️ Error al conectarse con Azure.');
-      }
+        } catch (error) {
+            console.error("Error:", error);
+            appendMessage('Bot', '⚠️ Error al conectarse con Azure.');
+        }
     }
-  });
+});
 
-  function appendMessage(sender, text) {
+function appendMessage(sender, text) {
     const content = document.getElementById('chatbotContent');
     const p = document.createElement('p');
     p.innerHTML = `<strong>${sender}:</strong> ${text}`;
     content.appendChild(p);
     content.scrollTop = content.scrollHeight;
-  }
+}
+
 </script>
 
 
