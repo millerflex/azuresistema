@@ -103,6 +103,9 @@
     @endif
 <script>
 
+
+
+
 const AZURE_OPENAI_ENDPOINT ='https://mille-md44djyf-swedencentral.cognitiveservices.azure.com/';
 const DEPLOYMENT_ID = 'gpt-4'; // Asegúrate de que este Deployment ID sea el correcto
 const API_VERSION = '2024-12-01-preview';
